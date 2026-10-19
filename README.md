@@ -40,12 +40,15 @@ shipguard/
 ├── references/
 │   └── scoring.md               # 100-point scoring model + blocker rules
 ├── scripts/
-│   └── collect_evidence.py      # Deterministic static evidence collector
+│   ├── collect_evidence.py      # Deterministic static evidence collector
+│   └── score_findings.py        # Deterministic scoring/decision engine
 ├── tests/
-│   └── test_collect_evidence.py # Local unit tests
+│   ├── test_collect_evidence.py
+│   └── test_score_findings.py
 ├── evals/
 │   └── cases.json               # Behavioral evaluation cases
 └── examples/
+    ├── findings.json            # Example scoring input
     └── sample-report.md         # Example audit output
 ```
 
@@ -81,15 +84,43 @@ The collector inspects repository-level evidence such as:
 
 The collector intentionally **does not** make the final readiness decision. `SKILL.md` defines the audit workflow and uses the collected evidence together with direct repository/runtime inspection.
 
+## Deterministic scoring
+
+After findings have been verified and classified, ShipGuard can calculate the final score and launch decision without relying on model arithmetic:
+
+```bash
+python scripts/score_findings.py examples/findings.json
+```
+
+On Windows:
+
+```powershell
+py scripts\score_findings.py examples\findings.json
+```
+
+A scoring input contains findings such as:
+
+```json
+{
+  "id": "DB-002",
+  "category": "Database & Data Integrity",
+  "severity": "Medium",
+  "confidence": "CONFIRMED",
+  "blocker": false
+}
+```
+
+`Critical + CONFIRMED` findings automatically block launch. An explicitly verified blocker also overrides the numeric score.
+
 ## Run the tests
 
-ShipGuard's evidence collector uses only the Python standard library. Run its local test suite with:
+ShipGuard's current helper scripts use only the Python standard library. Run the local test suite with:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-On Windows you can use:
+On Windows:
 
 ```powershell
 py -m unittest discover -s tests -v
@@ -140,7 +171,7 @@ ShipGuard is being built first for modern web application repositories, with an 
 
 ## Status
 
-Early development / MVP. The scoring model, baseline check catalog, evaluation fixtures, sample report, deterministic evidence collector, and local unit tests are implemented. Executable stack-specific checks and automated evaluation are next.
+Early development / MVP. The scoring model, baseline check catalog, evaluation fixtures, sample report, deterministic evidence collector, deterministic scoring engine, and local unit tests are implemented. Stack-specific analyzers and automated behavioral evaluation are next.
 
 ## License
 
