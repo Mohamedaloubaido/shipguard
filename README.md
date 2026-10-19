@@ -34,33 +34,30 @@ Examples of automatic blockers include committed production credentials, authent
 
 ```text
 shipguard/
-├── SKILL.md                     # Agent audit workflow
+├── SKILL.md
 ├── checks/
-│   └── core-checks.md           # Baseline production checks
+│   ├── core-checks.md
+│   └── nextjs-supabase.md
 ├── references/
-│   └── scoring.md               # 100-point scoring model + blocker rules
+│   └── scoring.md
 ├── scripts/
-│   ├── collect_evidence.py      # Deterministic static evidence collector
-│   └── score_findings.py        # Deterministic scoring/decision engine
+│   ├── collect_evidence.py
+│   ├── analyze_next_supabase.py
+│   └── score_findings.py
 ├── tests/
 │   ├── test_collect_evidence.py
+│   ├── test_next_supabase.py
 │   └── test_score_findings.py
 ├── evals/
-│   └── cases.json               # Behavioral evaluation cases
+│   └── cases.json
 └── examples/
-    ├── findings.json            # Example scoring input
-    └── sample-report.md         # Example audit output
+    ├── findings.json
+    └── sample-report.md
 ```
 
 ## Quick start
 
-Run the deterministic evidence collector against a local repository:
-
-```bash
-python scripts/collect_evidence.py /path/to/project
-```
-
-Or save the evidence as JSON:
+Run the deterministic evidence collector:
 
 ```bash
 python scripts/collect_evidence.py /path/to/project --output shipguard-evidence.json
@@ -72,21 +69,35 @@ On Windows PowerShell:
 py scripts\collect_evidence.py C:\path\to\project --output shipguard-evidence.json
 ```
 
-The collector inspects repository-level evidence such as:
+The collector inspects repository-level evidence such as framework markers, package scripts, tracked environment files, secret-like assignments, database/migration markers, CI/deployment configuration, and observability dependencies.
 
-- framework and package-manager markers;
-- build/test/lint/typecheck scripts;
-- tracked environment files;
-- secret-like assignments without exposing their values;
-- database/migration markers;
-- CI and deployment configuration;
-- observability dependency markers.
+## Next.js + Supabase analyzer
 
-The collector intentionally **does not** make the final readiness decision. `SKILL.md` defines the audit workflow and uses the collected evidence together with direct repository/runtime inspection.
+ShipGuard includes a stack-specific analyzer for Next.js applications using Supabase:
+
+```bash
+python scripts/analyze_next_supabase.py /path/to/project --output next-supabase-report.json
+```
+
+On Windows:
+
+```powershell
+py scripts\analyze_next_supabase.py C:\path\to\project --output next-supabase-report.json
+```
+
+Current checks include:
+
+- public exposure of Supabase service-role credentials;
+- service-role references from Client Components;
+- Supabase migration tables without detected RLS enablement;
+- mutating App Router Route Handlers where authentication cannot be verified locally;
+- `dangerouslySetInnerHTML` usages requiring sanitization review.
+
+The analyzer deliberately distinguishes `CONFIRMED`, `LIKELY`, and `NOT VERIFIED` results. Missing repository evidence is not automatically treated as proof of a production defect.
 
 ## Deterministic scoring
 
-After findings have been verified and classified, ShipGuard can calculate the final score and launch decision without relying on model arithmetic:
+After findings are verified and classified, calculate the final score and launch decision without relying on model arithmetic:
 
 ```bash
 python scripts/score_findings.py examples/findings.json
@@ -114,7 +125,7 @@ A scoring input contains findings such as:
 
 ## Run the tests
 
-ShipGuard's current helper scripts use only the Python standard library. Run the local test suite with:
+ShipGuard's helper scripts use only the Python standard library:
 
 ```bash
 python -m unittest discover -s tests -v
@@ -128,7 +139,7 @@ py -m unittest discover -s tests -v
 
 ## Evidence model
 
-Every finding should use one of three confidence states:
+Every finding uses one of three confidence states:
 
 - `CONFIRMED` — directly supported by code, configuration, runtime output, schema, policy, or dependency metadata.
 - `LIKELY` — strongly indicated, but one verification step is still missing.
@@ -157,10 +168,6 @@ SG-003  Missing index on orders.customer_id
 
 See [`examples/sample-report.md`](examples/sample-report.md) for a complete report.
 
-## Current scope
-
-ShipGuard is being built first for modern web application repositories, with an initial focus on stacks such as Next.js, React, TypeScript, Supabase/PostgreSQL, and common deployment platforms. The audit rules remain evidence-driven so additional stacks can be added without changing the core decision model.
-
 ## Design principles
 
 1. **Evidence before scoring.** Never deduct points from assumptions.
@@ -171,7 +178,7 @@ ShipGuard is being built first for modern web application repositories, with an 
 
 ## Status
 
-Early development / MVP. The scoring model, baseline check catalog, evaluation fixtures, sample report, deterministic evidence collector, deterministic scoring engine, and local unit tests are implemented. Stack-specific analyzers and automated behavioral evaluation are next.
+MVP implemented. ShipGuard currently includes a deterministic evidence collector, a deterministic scoring engine, a Next.js + Supabase analyzer, a baseline check catalog, stack-specific checks, behavioral eval fixtures, sample reports, and local unit tests.
 
 ## License
 
