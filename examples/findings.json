@@ -1,0 +1,25 @@
+{
+  "findings": [
+    {
+      "id": "SEC-007",
+      "category": "Security",
+      "severity": "High",
+      "confidence": "LIKELY",
+      "blocker": false
+    },
+    {
+      "id": "DB-002",
+      "category": "Database & Data Integrity",
+      "severity": "Medium",
+      "confidence": "CONFIRMED",
+      "blocker": false
+    },
+    {
+      "id": "OBS-001",
+      "category": "Observability",
+      "severity": "Medium",
+      "confidence": "NOT VERIFIED",
+      "blocker": false
+    }
+  ]
+}
