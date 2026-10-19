@@ -41,13 +41,16 @@ Identify, when present:
 - logging, monitoring, and error tracking;
 - test strategy.
 
-Pay special attention to common modern web stacks including Next.js, React, TypeScript, Supabase, PostgreSQL, serverless platforms, and managed deployment platforms.
+Run `scripts/collect_evidence.py` when local repository execution is available. Treat its output as repository evidence, not as the final audit result.
+
+When both Next.js and Supabase are detected, also run `scripts/analyze_next_supabase.py` and consult `checks/nextjs-supabase.md`. Do not silently promote `LIKELY` or `NOT VERIFIED` analyzer results to `CONFIRMED` without additional evidence.
 
 ### 2. Establish evidence
 
 For every issue, capture:
 - category;
 - severity;
+- confidence (`CONFIRMED`, `LIKELY`, or `NOT VERIFIED`);
 - affected file or component;
 - evidence;
 - production impact;
@@ -146,21 +149,31 @@ Do not penalize subjective style preferences.
 
 Use these severities:
 
-- `CRITICAL` — credible risk of unauthorized access, data exposure/loss, severe financial impact, or a launch-breaking defect. A critical finding blocks release.
-- `HIGH` — substantial production risk likely to cause security, reliability, or operational failure. Normally blocks release until resolved.
+- `CRITICAL` — credible risk of unauthorized access, data exposure/loss, severe financial impact, or a launch-breaking defect. A confirmed critical finding blocks release.
+- `HIGH` — substantial production risk likely to cause security, reliability, or operational failure.
 - `MEDIUM` — meaningful weakness that should be addressed soon but may not independently block launch.
 - `LOW` — limited production impact or hardening opportunity.
 - `INFO` — observation with no direct defect.
 
 Avoid severity inflation.
 
+Confidence is separate from severity:
+
+- `CONFIRMED` — directly supported by inspected evidence.
+- `LIKELY` — strongly indicated, but one verification step remains.
+- `NOT VERIFIED` — the control or risk could not be established from available evidence.
+
+A `NOT VERIFIED` result is a gap, not proof of failure.
+
 ### 5. Determine launch status
+
+Read `references/scoring.md` and use `scripts/score_findings.py` when structured findings are available.
 
 Return exactly one launch decision:
 
-- `READY` — no verified critical/high blockers and core production controls are present.
-- `NEEDS WORK` — no critical blocker, but important risks or unverifiable production controls remain.
-- `BLOCKED` — one or more critical findings, or a high-severity condition that makes deployment unsafe.
+- `READY` — no verified release blocker and the score/readiness threshold is met.
+- `NEEDS WORK` — no confirmed blocker, but important risks or unverifiable production controls remain.
+- `BLOCKED` — one or more confirmed critical findings, an explicitly verified blocker, or a score below the defined minimum.
 
 A high numeric score must never override a release-blocking finding.
 
@@ -179,11 +192,12 @@ Confidence: <HIGH | MEDIUM | LOW>
 <short production-focused summary>
 
 ## Release blockers
-<critical/high blockers, or "None verified">
+<confirmed blockers, or "None verified">
 
 ## Findings
 
 ### [SEVERITY] Finding title
+Confidence: <CONFIRMED | LIKELY | NOT VERIFIED>
 Category: <category>
 Evidence: <file/path/component and concise evidence>
 Impact: <what can happen in production>
@@ -205,20 +219,18 @@ Keep the executive summary concise. Put technical detail in the findings.
 
 ## Scoring rules
 
-Before assigning the final numeric score, read `references/scoring.md` when it contains a scoring model.
+Use the scoring model in `references/scoring.md`. Prefer `scripts/score_findings.py` for deterministic arithmetic and launch-decision logic.
 
-Until a scoring model is available, treat the numeric score as provisional and prioritize the launch decision and severity classification over the number.
-
-Never present a score as precise when major areas could not be inspected.
+Do not deduct for `NOT VERIFIED` items unless the scoring model explicitly defines a verification penalty. Never invent numeric precision for areas that could not be inspected.
 
 ## Remediation behavior
 
 When the user asks ShipGuard to fix findings:
-1. fix release blockers first;
+1. fix confirmed release blockers first;
 2. make the smallest safe change;
 3. preserve existing architecture unless a redesign is necessary;
 4. add or update tests when practical;
-5. re-run relevant checks after changes;
+5. re-run relevant deterministic checks after changes;
 6. update the report based on verified post-fix evidence.
 
 Do not claim a finding is fixed until the relevant code/configuration has been re-inspected or tested.
