@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "purpose": "Behavioral evaluation cases for ShipGuard scoring and launch decisions.",
+  "cases": [
+    {
+      "id": "critical-exposed-service-role",
+      "description": "A privileged Supabase service-role key is committed in a tracked environment file.",
+      "evidence": [
+        "Repository contains a tracked .env.production file.",
+        "The file includes SUPABASE_SERVICE_ROLE_KEY with a non-placeholder value."
+      ],
+      "expected": {
+        "severity": "Critical",
+        "confidence": "CONFIRMED",
+        "category": "Security",
+        "decision": "BLOCKED",
+        "must_trigger_blocker": true
+      }
+    },
+    {
+      "id": "critical-cross-tenant-access",
+      "description": "A user-facing data query lacks tenant scoping and allows authenticated users to read another tenant's records.",
+      "evidence": [
+        "The route accepts an arbitrary tenantId from the request.",
+        "Authorization checks only verify that the requester is authenticated.",
+        "The database query filters by the supplied tenantId without verifying tenant membership."
+      ],
+      "expected": {
+        "severity": "Critical",
+        "confidence": "CONFIRMED",
+        "category": "Security",
+        "decision": "BLOCKED",
+        "must_trigger_blocker": true
+      }
+    },
+    {
+      "id": "high-no-rate-limit-auth",
+      "description": "A public password-reset or login endpoint has no visible abuse protection.",
+      "evidence": [
+        "The public authentication endpoint is present.",
+        "No application-level rate limiter is present in the inspected request path.",
+        "Upstream platform rate limiting cannot be verified."
+      ],
+      "expected": {
+        "severity": "High",
+        "confidence": "LIKELY",
+        "category": "Security",
+        "must_trigger_blocker": false,
+        "notes": "Do not claim there is definitively no rate limiting when upstream infrastructure was not inspected."
+      }
+    },
+    {
+      "id": "medium-missing-db-index",
+      "description": "A high-volume lookup filters on an unindexed foreign key.",
+      "evidence": [
+        "Query path repeatedly filters orders by customer_id.",
+        "Schema and migrations show no index covering customer_id."
+      ],
+      "expected": {
+        "severity": "Medium",
+        "confidence": "CONFIRMED",
+        "category": "Database & Data Integrity",
+        "must_trigger_blocker": false
+      }
+    },
+    {
+      "id": "build-failure-production",
+      "description": "The application cannot produce a production build due to a deterministic TypeScript error.",
+      "evidence": [
+        "Production build command exits non-zero.",
+        "The failure is reproducible and occurs before an artifact is created."
+      ],
+      "expected": {
+        "severity": "Critical",
+        "confidence": "CONFIRMED",
+        "category": "Deployment & Configuration",
+        "decision": "BLOCKED",
+        "must_trigger_blocker": true
+      }
+    },
+    {
+      "id": "observability-not-verified",
+      "description": "No monitoring configuration is visible in the repository, but deployment-platform settings were not provided.",
+      "evidence": [
+        "No repository-level monitoring SDK or config is found.",
+        "Production platform configuration is unavailable."
+      ],
+      "expected": {
+        "confidence": "NOT VERIFIED",
+        "category": "Observability",
+        "deduction": 0,
+        "must_trigger_blocker": false,
+        "notes": "Report as a verification gap rather than asserting that monitoring does not exist."
+      }
+    },
+    {
+      "id": "ready-with-positive-controls",
+      "description": "A production-ready application has verified authorization, safe secrets handling, successful build, migrations, monitoring, and rollback controls.",
+      "evidence": [
+        "Production build succeeds.",
+        "Secrets are injected by the deployment platform and no real credentials are committed.",
+        "Authorization is enforced server-side on protected operations.",
+        "Tenant-scoped database policies are present and tested.",
+        "Error monitoring and health checks are configured.",
+        "Deployment procedure includes tested rollback guidance."
+      ],
+      "expected": {
+        "decision": "READY",
+        "minimum_score": 90,
+        "must_trigger_blocker": false
+      }
+    },
+    {
+      "id": "high-score-still-blocked",
+      "description": "An otherwise mature application has one confirmed authorization bypass.",
+      "evidence": [
+        "Most production controls are verified and would produce a score above 90 before blocker evaluation.",
+        "One admin mutation route trusts a client-supplied role and performs no server-side authorization check."
+      ],
+      "expected": {
+        "severity": "Critical",
+        "confidence": "CONFIRMED",
+        "category": "Security",
+        "decision": "BLOCKED",
+        "must_trigger_blocker": true,
+        "notes": "The launch decision must override the raw numeric score."
+      }
+    }
+  ]
+}
