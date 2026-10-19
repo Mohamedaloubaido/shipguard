@@ -41,6 +41,8 @@ shipguard/
 │   └── scoring.md               # 100-point scoring model + blocker rules
 ├── scripts/
 │   └── collect_evidence.py      # Deterministic static evidence collector
+├── tests/
+│   └── test_collect_evidence.py # Local unit tests
 ├── evals/
 │   └── cases.json               # Behavioral evaluation cases
 └── examples/
@@ -78,6 +80,20 @@ The collector inspects repository-level evidence such as:
 - observability dependency markers.
 
 The collector intentionally **does not** make the final readiness decision. `SKILL.md` defines the audit workflow and uses the collected evidence together with direct repository/runtime inspection.
+
+## Run the tests
+
+ShipGuard's evidence collector uses only the Python standard library. Run its local test suite with:
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+On Windows you can use:
+
+```powershell
+py -m unittest discover -s tests -v
+```
 
 ## Evidence model
 
@@ -124,7 +140,7 @@ ShipGuard is being built first for modern web application repositories, with an 
 
 ## Status
 
-Early development / MVP. The scoring model, baseline check catalog, evaluation fixtures, sample report, and first deterministic evidence collector are implemented. Executable stack-specific checks and automated evaluation are next.
+Early development / MVP. The scoring model, baseline check catalog, evaluation fixtures, sample report, deterministic evidence collector, and local unit tests are implemented. Executable stack-specific checks and automated evaluation are next.
 
 ## License
 
